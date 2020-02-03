@@ -6,6 +6,9 @@ import requests
 import io
 from hyper.contrib import HTTP20Adapter
 import hyper
+import random
+import string
+
 
 # For error handling
 import socket
@@ -15,12 +18,16 @@ out_path = 'out.csv'
 
 zip_file = io.BytesIO(requests.get(start_file).content)
 
+def randomString(stringLength=10):
+	letters = string.ascii_lowercase
+	return ''.join(random.choice(letters) for i in range(stringLength))
+
 def http_version(site):
 	s = requests.Session()
 	s.mount("https://" + site, HTTP20Adapter())
 	try:
 		r = s.get("https://" + site)
-	except socket.timeout:
+	except (socket.timeout, requests.exceptions.ConnectionError, TimeoutError):
 		return "TIMEOUT"
 	except KeyboardInterrupt:
 		exit(-1)
@@ -35,7 +42,17 @@ def http_version(site):
 		return "FAIL"
 
 def answer_malformed(site):
-	pass
+	random = randomString(50)
+	try:
+		r = requests.get("https://" + site + "/" + random)
+	except (TimeoutError, requests.exceptions.ConnectionError):
+		return "TIMEOUT"
+	except:
+		return "ERROR"
+	try:
+		return str(r.status_code) + "IN" if random in r.content.decode(r.encoding) else str(r.status_code)
+	except UnicodeDecodeError:
+		return str(r.status_code)
 
 
 def process(site, out_file):
@@ -43,12 +60,19 @@ def process(site, out_file):
 	out = [site]
 
 	out.append(http_version(site))
+	out.append(answer_malformed(site))
 
 	line = ",".join(out) + "\n"
+
+	print(line)
+
 	out_file.write(line)
 
 
 with open(out_path, "a") as out_file:
+
+	process("xinhuanet.com", out_file)
+
 	with zipfile.ZipFile(zip_file) as zipopen:
 		with zipopen.open("top-1m.csv") as f:
 			# CSV file opened
