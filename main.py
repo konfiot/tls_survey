@@ -17,6 +17,8 @@ import socket
 
 STORE = "MONGODB" #CSV, MONGO
 
+PURGE_DB = True # Reset DB on startup
+
 start_file = "https://s3.amazonaws.com/alexa-static/top-1m.csv.zip"
 out_path = 'out.csv' # For CSV store
 
@@ -26,6 +28,8 @@ if STORE == "MONGODB":
 	import pymongo
 	mongo_client = pymongo.MongoClient()
 	mongo_db = mongo_client.tls_survey
+	if PURGE_DB:
+		mongo_db.sites.drop()
 
 
 zip_file = io.BytesIO(requests.get(start_file).content)
