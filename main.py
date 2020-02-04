@@ -8,14 +8,25 @@ from hyper.contrib import HTTP20Adapter
 import hyper
 import random
 import string
+import time
 
 from M2Crypto import SSL
 
 # For error handling
 import socket
 
+STORE = "MONGODB" #CSV, MONGO
+
 start_file = "https://s3.amazonaws.com/alexa-static/top-1m.csv.zip"
-out_path = 'out.csv'
+out_path = 'out.csv' # For CSV store
+
+mongo_client = None
+
+if STORE == "MONGODB":
+	import pymongo
+	mongo_client = pymongo.MongoClient()
+	mongo_db = mongo_client.tls_survey
+
 
 zip_file = io.BytesIO(requests.get(start_file).content)
 
@@ -76,29 +87,40 @@ def ssl_cipher(site):
 
 
 
-def process(site, out_file):
-	print(f"Processing site : {site}")
-	out = [site]
+def process(site):
+	print(f"Processing site : {site} ; ", end="")
+	out = {"site": site}
 
-	out.append(http_version(site))
-	out.append(answer_malformed(site))
-	out.append(ssl_cipher(site))
+	t0 = time.time()
+	out["http_version"] = http_version(site)
+	print(f"http_version : {out['http_version']}, {time.time()-t0:.2f} s; ", end="")
 
-	line = ",".join(out) + "\n"
+	t0 = time.time()
+	out["answer_malformed"] = answer_malformed(site)
+	print(f"answer_malformed : {out['answer_malformed']}, {time.time()-t0:.2f} s; ", end="")
 
-	print(line)
+	t0 = time.time()
+	out["ssl_cipher"] = ssl_cipher(site)
+	print(f"ssl_cipher : {out['ssl_cipher']}, {time.time()-t0:.2f} s")
 
-	out_file.write(line)
+	print(out)
+
+	if STORE == "CSV":
+		out_file = open(out_path, "a")
+		line = ",".join(out.values()) + "\n"
+		out_file.write(line)
+		out_file.close()
+	elif STORE == "MONGODB":
+		mongo_db.sites.insert_one(out)
 
 
-with open(out_path, "a") as out_file:
-	with zipfile.ZipFile(zip_file) as zipopen:
-		with zipopen.open("top-1m.csv") as f:
-			# CSV file opened
-			
+with zipfile.ZipFile(zip_file) as zipopen:
+	with zipopen.open("top-1m.csv") as f:
+		# CSV file opened
+		
+		line = f.readline()
+		while line:
+			site = line.decode("utf-8").strip().split(",")[1]
+			process(site)
+
 			line = f.readline()
-			while line:
-				site = line.decode("utf-8").strip().split(",")[1]
-				process(site, out_file)
-
-				line = f.readline()
