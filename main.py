@@ -9,6 +9,7 @@ import hyper
 import random
 import string
 
+from M2Crypto import SSL
 
 # For error handling
 import socket
@@ -54,6 +55,21 @@ def answer_malformed(site):
 	except UnicodeDecodeError:
 		return str(r.status_code)
 
+def ssl_cipher(site):
+	ctx = SSL.Context()
+	s = SSL.Connection(ctx)
+
+	s.postConnectionCheck = None
+	s.connect((site, 443))
+
+	if s.get_state() == "SSLOK ":
+		c = s.get_cipher()
+		cp = c.name()
+		return cp
+	s.close()
+
+
+
 
 def process(site, out_file):
 	print(f"Processing site : {site}")
@@ -61,6 +77,7 @@ def process(site, out_file):
 
 	out.append(http_version(site))
 	out.append(answer_malformed(site))
+	out.append(ssl_cipher(site))
 
 	line = ",".join(out) + "\n"
 
@@ -70,9 +87,6 @@ def process(site, out_file):
 
 
 with open(out_path, "a") as out_file:
-
-	process("xinhuanet.com", out_file)
-
 	with zipfile.ZipFile(zip_file) as zipopen:
 		with zipopen.open("top-1m.csv") as f:
 			# CSV file opened
