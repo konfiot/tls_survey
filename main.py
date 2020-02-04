@@ -64,6 +64,8 @@ def ssl_cipher(site):
 		s.connect((site, 443))
 	except TimeoutError:
 		return "TIMEOUT"
+	except:
+		return "ERROR"
 
 	if s.get_state() == "SSLOK ":
 		c = s.get_cipher()
