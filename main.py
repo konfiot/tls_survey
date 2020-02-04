@@ -52,7 +52,7 @@ def answer_malformed(site):
 		return "ERROR"
 	try:
 		return str(r.status_code) + "IN" if random in r.content.decode(r.encoding) else str(r.status_code)
-	except UnicodeDecodeError:
+	except (TypeError, UnicodeDecodeError):
 		return str(r.status_code)
 
 def ssl_cipher(site):
