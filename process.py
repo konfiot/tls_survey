@@ -4,11 +4,10 @@ import random
 import string
 import time
 import requests
-
-from M2Crypto import SSL
-
-# For error handling
+import sys
 import socket
+import ssl
+
 
 STORE = "MONGODB" #CSV, MONGODB
 out_path = 'out.csv' # For CSV store
@@ -52,6 +51,7 @@ class Process:
 		elif isinstance(r.raw,  hyper.HTTP11Response):
 			return "1.1"
 		else:
+			print("Unexpected error:", sys.exc_info()[0])
 			return "FAIL"
 
 	def answer_malformed(self, site):
@@ -63,6 +63,7 @@ class Process:
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
+			print("Unexpected error:", sys.exc_info()[0])
 			return "ERROR"
 		try:
 			return str(r.status_code) + "IN" if random in r.content.decode(r.encoding) else str(r.status_code)
@@ -70,24 +71,21 @@ class Process:
 			return str(r.status_code)
 
 	def ssl_cipher(self, site):
-		ctx = SSL.Context()
-		s = SSL.Connection(ctx)
+		context = ssl.create_default_context()
 
-		s.postConnectionCheck = None
 		try:
-			s.connect((site, 443))
+			sock = socket.create_connection((site, 443))
+			ssock = context.wrap_socket(sock, server_hostname=site)
 		except TimeoutError:
 			return "TIMEOUT"
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
+			print("Unexpected error:", sys.exc_info()[0])
 			return "ERROR"
-
-		if s.get_state() == "SSLOK ":
-			c = s.get_cipher()
-			cp = c.name()
-			return cp
-		s.close()
+		c, v, l = ssock.cipher()
+		ssock.close()
+		return c
 
 
 
