@@ -7,6 +7,7 @@ import requests
 import sys
 import socket
 import ssl
+import traceback
 
 
 STORE = "MONGODB" #CSV, MONGODB
@@ -44,6 +45,9 @@ class Process:
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
+			_,e,t = sys.exc_info()
+			print("Unexpected error:", e, "Traceback : ")
+			traceback.print_tb(t)
 			return "ERROR"
 
 		if isinstance(r.raw,  hyper.HTTP20Response):
@@ -51,7 +55,6 @@ class Process:
 		elif isinstance(r.raw,  hyper.HTTP11Response):
 			return "1.1"
 		else:
-			print("Unexpected error:", sys.exc_info()[0])
 			return "FAIL"
 
 	def answer_malformed(self, site):
@@ -63,8 +66,11 @@ class Process:
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
-			print("Unexpected error:", sys.exc_info()[0])
+			_,e,t = sys.exc_info()
+			print("Unexpected error:", e, "Traceback : ")
+			traceback.print_tb(t)
 			return "ERROR"
+
 		try:
 			return str(r.status_code) + "IN" if random in r.content.decode(r.encoding) else str(r.status_code)
 		except (TypeError, UnicodeDecodeError):
@@ -81,7 +87,9 @@ class Process:
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
-			print("Unexpected error:", sys.exc_info()[0])
+			_,e,t = sys.exc_info()
+			print("Unexpected error:", e, "Traceback : ")
+			traceback.print_tb(t)
 			return "ERROR"
 		c, v, l = ssock.cipher()
 		ssock.close()
