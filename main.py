@@ -63,6 +63,8 @@ def answer_malformed(site):
 		r = requests.get("https://" + site + "/" + random)
 	except (TimeoutError, requests.exceptions.ConnectionError):
 		return "TIMEOUT"
+	except KeyboardInterrupt:
+		exit(-1)
 	except:
 		return "ERROR"
 	try:
@@ -79,6 +81,8 @@ def ssl_cipher(site):
 		s.connect((site, 443))
 	except TimeoutError:
 		return "TIMEOUT"
+	except KeyboardInterrupt:
+		exit(-1)
 	except:
 		return "ERROR"
 
