@@ -10,8 +10,8 @@ import process
 DISTRIBUTE = True # Distribute tasks using redis
 
 PURGE_DB = True # Reset DB on startup
-STORE = "MONGODB" #CSV, MONGODB
-out_path = 'out.csv' # For CSV store
+STORE = process.STORE
+out_path = process.out_path # For CSV store
 
 start_file = "https://s3.amazonaws.com/alexa-static/top-1m.csv.zip"
 
