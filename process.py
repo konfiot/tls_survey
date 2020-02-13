@@ -33,7 +33,7 @@ class Process:
 
 		if STORE == "CSV":
 			self.out_file = open(out_path, "a")
-			out_file.write("site,http_version,answer_malformed,ssl_cipher\n")
+			out_file.write("site,https,http_version,answer_malformed,ssl_cipher,ssl_version\n")
 
 	def http_version(self, site):
 		s = requests.Session()
@@ -83,17 +83,17 @@ class Process:
 			sock = socket.create_connection((site, 443))
 			ssock = context.wrap_socket(sock, server_hostname=site)
 		except TimeoutError:
-			return "TIMEOUT"
+			return "TIMEOUT", "TIMEOUT"
 		except KeyboardInterrupt:
 			exit(-1)
 		except:
 			_,e,t = sys.exc_info()
 			print("Unexpected error:", e, "Traceback : ")
 			traceback.print_tb(t)
-			return "ERROR"
+			return "ERROR", "ERROR"
 		c, v, l = ssock.cipher()
 		ssock.close()
-		return c
+		return c, v
 
 
 
@@ -111,13 +111,15 @@ class Process:
 		print(f"answer_malformed : {out['answer_malformed']}, {time.time()-t0:.2f} s; ", end="")
 
 		t0 = time.time()
-		out["ssl_cipher"] = self.ssl_cipher(site)
+		out["ssl_cipher"], out["ssl_version"] = self.ssl_cipher(site)
 		print(f"ssl_cipher : {out['ssl_cipher']}, {time.time()-t0:.2f} s")
+
+		out['https'] = not all([out[x] in ["ERROR", "TIMEOUT", "FAIL"] for x in out.keys() if x != "site"])
 
 		print(out)
 
 		if STORE == "CSV":
-			line = f"{out['site']},{out['http_version']},{out['answer_malformed']},{out['ssl_cipher']}\n"
+			line = f"{out['site']},{out['https']},{out['http_version']},{out['answer_malformed']},{out['ssl_cipher']},{out['ssl_version']}\n"
 			self.out_file.write(line)
 
 		elif STORE == "MONGODB":
